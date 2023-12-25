@@ -47,6 +47,7 @@ class MeldApp(Gtk.Application):
         self.set_application_id("org.gnome.meld")
         GLib.set_application_name("Meld")
         Gtk.Window.set_default_icon_name("meld")
+        self.customDiffTool = None
 
     def do_startup(self):
         Gtk.Application.do_startup(self)
@@ -262,6 +263,10 @@ class MeldApp(Gtk.Application):
             "", "--diff", action="callback", callback=self.diff_files_callback,
             dest="diff", default=[],
             help=_("Create a diff tab for the supplied files or folders"))
+        parser.add_option(
+            "", "--ext-difftool", action="store", type="string",
+            dest="ext_difftool", default=None,
+            help=_("Use an external difftool"))
 
         def cleanup():
             if not command_line.get_is_remote():
@@ -305,6 +310,9 @@ class MeldApp(Gtk.Application):
                 cleanup()
                 return parser.exit_status
             return tab
+        
+        if options.ext_difftool is not None:
+            self.customDiffTool = options.ext_difftool
 
         def make_file_from_command_line(arg):
             f = command_line.create_file_for_arg(arg)
