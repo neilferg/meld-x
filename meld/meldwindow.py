@@ -16,6 +16,7 @@
 
 import logging
 import os
+import subprocess
 from typing import Any, Dict, Optional, Sequence
 
 from gi.repository import Gdk, Gio, GLib, Gtk
@@ -59,6 +60,8 @@ class MeldWindow(Gtk.ApplicationWindow):
     spinner = Gtk.Template.Child()
     vc_filter_button = Gtk.Template.Child()
     view_toolbar = Gtk.Template.Child()
+
+    customDiffTool = None
 
     def __init__(self):
         super().__init__()
@@ -367,6 +370,19 @@ class MeldWindow(Gtk.ApplicationWindow):
             self, gfiles, *, encodings=None, merge_output=None, meta=None):
         assert len(gfiles) in (1, 2, 3)
         doc = FileDiff(len(gfiles))
+
+        customDiffTool = (len(gfiles) == 2) and (merge_output is None)
+        customDiffTool = customDiffTool and (MeldWindow.customDiffTool is not None)
+        if customDiffTool:
+            if os.name == 'nt':
+                cmd = '%s "%s" "%s"' % (MeldWindow.customDiffTool, gfiles[0].get_path(), gfiles[1].get_path())
+            else:
+                cmd = MeldWindow.customDiffTool.split()
+                cmd.extend([gfiles[0].get_path(), gfiles[1].get_path()])
+
+            subprocess.Popen(cmd)
+            return None
+
         self._append_page(doc)
         doc.set_files(gfiles, encodings)
         if merge_output is not None:
