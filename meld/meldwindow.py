@@ -15,6 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
+import subprocess
 
 from gi.repository import Gdk
 from gi.repository import Gio
@@ -587,6 +588,19 @@ class MeldWindow(gnomeglade.Component):
     def append_filediff(self, files, merge_output=None, meta=None):
         assert len(files) in (1, 2, 3)
         doc = filediff.FileDiff(len(files))
+
+        customDiffTool = (len(files) == 2) and (merge_output is None)
+        customDiffTool = customDiffTool and (MeldWindow.customDiffTool is not None)
+        if customDiffTool:
+            if os.name == 'nt':
+                cmd = '%s "%s" "%s"' % (MeldWindow.customDiffTool, files[0], files[1])
+            else:
+                cmd = MeldWindow.customDiffTool.split()
+                cmd.extend(files)
+
+            subprocess.Popen(cmd)
+            return None
+
         self._append_page(doc, "text-x-generic")
         doc.set_files(files)
         if merge_output is not None:
